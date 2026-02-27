@@ -6,7 +6,6 @@ collections:
     permalink: /newsletter/{slug}/
     template: index
     filter: "tag:yesterday-in-ai"
-    data: tag.yesterday-in-ai
   /feed/:
     permalink: /feed/{slug}/
     template: index
