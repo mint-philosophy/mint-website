@@ -1,0 +1,19 @@
+<div class="project-card" id="project-{{slug}}">
+  <div class="project-header">
+    <h3>
+      {{#if feature_image}}
+        <span class="project-icon"><img src="{{feature_image}}" alt=""></span>
+      {{/if}}
+      {{title}}
+    </h3>
+    <span class="project-toggle">&#9660;</span>
+  </div>
+  {{#if custom_excerpt}}
+    <p class="project-summary">{{custom_excerpt}}</p>
+  {{/if}}
+  <div class="project-detail">
+    <div class="project-detail-inner">
+      {{{content}}}
+    </div>
+  </div>
+</div>

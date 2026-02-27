@@ -1,0 +1,47 @@
+{{!< default}}
+
+<section class="archive-header">
+  <div class="container">
+    <p class="section-label">Author</p>
+    <h1>{{author.name}}</h1>
+    {{#if author.bio}}
+      <p class="archive-description">{{author.bio}}</p>
+    {{/if}}
+  </div>
+</section>
+
+<section class="post-listing">
+  <div class="container">
+    {{#foreach posts}}
+      <article class="post-card">
+        <div class="post-card-content">
+          <span class="post-card-date">{{date published_at format="D MMM YYYY"}}</span>
+          <h2 class="post-card-title">
+            <a href="{{url}}">{{title}}</a>
+          </h2>
+          {{#if custom_excerpt}}
+            <p class="post-card-excerpt">{{custom_excerpt}}</p>
+          {{else}}
+            <p class="post-card-excerpt">{{excerpt words="30"}}</p>
+          {{/if}}
+        </div>
+      </article>
+    {{/foreach}}
+
+    {{#if pagination}}
+      {{#if pagination.pages}}
+        {{#match pagination.pages ">" 1}}
+          <nav class="pagination">
+            {{#if pagination.prev}}
+              <a class="pagination-prev" href="{{page_url pagination.prev}}">&larr; Newer</a>
+            {{/if}}
+            <span class="pagination-info">Page {{pagination.page}} of {{pagination.pages}}</span>
+            {{#if pagination.next}}
+              <a class="pagination-next" href="{{page_url pagination.next}}">Older &rarr;</a>
+            {{/if}}
+          </nav>
+        {{/match}}
+      {{/if}}
+    {{/if}}
+  </div>
+</section>

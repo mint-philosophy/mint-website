@@ -1,0 +1,271 @@
+{{!< default}}
+
+{{!-- ============================================================
+     HERO
+     ============================================================ --}}
+<section class="hero" id="hero">
+  <div class="container">
+    <img src="{{asset "images/minty-rgb-standard.png"}}" alt="MINT Lab — Minty the squid mascot with wordmark" class="hero-logo">
+    <p class="hero-tagline">Machine Intelligence and Normative Theory</p>
+    <p class="hero-institution">Australian National University &middot; Johns Hopkins University</p>
+    <p class="wip-notice">This site is a work-in-progress. All text is just placeholder text.</p>
+  </div>
+</section>
+
+{{!-- ============================================================
+     ABOUT
+     ============================================================ --}}
+<section class="bg-off-white" id="about">
+  <div class="container">
+    <p class="section-label">About</p>
+    <h2>The Lab</h2>
+    <div class="about-content">
+      <p>MINT Lab develops robust philosophical foundations for AI governance and safety. We do empirically- and technically-grounded philosophical work on AI and computational technologies, bridging normative theory with real-world impact through policy engagement, industry collaboration, and public scholarship.</p>
+      <p><span class="pi-name">Seth Lazar</span> is Professor of Philosophy at Johns Hopkins University and founding director of MINT Lab. His research focuses on the normative philosophy of computing&thinsp;&mdash;&thinsp;foundational questions about what computational tools should be used for, who decides, and how AI systems reshape power, agency, and moral life. He is also a Distinguished Research Fellow at the University of Oxford Institute for Ethics in AI.</p>
+    </div>
+  </div>
+</section>
+
+{{!-- ============================================================
+     RESEARCH PROJECTS
+     ============================================================ --}}
+<section id="research">
+  <div class="container">
+    <p class="section-label">Research</p>
+    <h2>Current Projects</h2>
+    <div class="projects-grid" id="projects-grid">
+
+      <div class="project-card" id="project-normative-competence">
+        <div class="project-header">
+          <h3>
+            <span class="project-icon">&#x2696;&#xFE0F;</span>
+            Normative Competence
+          </h3>
+          <span class="project-toggle">&#9660;</span>
+        </div>
+        <p class="project-summary">How should AI systems handle moral reasoning? We investigate the foundations of normative competence in artificial agents&thinsp;&mdash;&thinsp;what it means for machines to act well, and how to evaluate whether they do.</p>
+        <div class="project-detail">
+          <div class="project-detail-inner">Placeholder&thinsp;&mdash;&thinsp;detailed description to be provided. This project investigates the moral and epistemic capacities required for AI systems to function as normative agents, drawing on philosophical accounts of moral skill, practical wisdom, and ethical expertise.</div>
+        </div>
+      </div>
+
+      <div class="project-card" id="project-agents">
+        <div class="project-header">
+          <h3>
+            <span class="project-icon">&#x1F916;</span>
+            Agents
+          </h3>
+          <span class="project-toggle">&#9660;</span>
+        </div>
+        <p class="project-summary">Language model agents are becoming autonomous actors in the world. We study their societal impact, the right norms to guide their behaviour, and the policies and technical interventions needed to govern them.</p>
+        <div class="project-detail">
+          <div class="project-detail-inner">Placeholder&thinsp;&mdash;&thinsp;detailed description to be provided. This project examines tool-using augmented language models in executive control, anticipating the societal impact of these agents and developing frameworks for their responsible deployment.</div>
+        </div>
+      </div>
+
+      <div class="project-card" id="project-post-agi">
+        <div class="project-header">
+          <h3>
+            <span class="project-icon">&#x1F310;</span>
+            Post-AGI Political Philosophy
+          </h3>
+          <span class="project-toggle">&#9660;</span>
+        </div>
+        <p class="project-summary">What political and social institutions do we need for a world with transformatively powerful AI? We develop philosophical frameworks for governance, justice, and human flourishing beyond the current paradigm.</p>
+        <div class="project-detail">
+          <div class="project-detail-inner">Placeholder&thinsp;&mdash;&thinsp;detailed description to be provided. This project develops political philosophy adequate to the possibility of artificial general intelligence, addressing questions of power, distribution, democratic governance, and human meaning in a post-AGI world.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{{!-- ============================================================
+     FEED (Publications / Events / News)
+     ============================================================ --}}
+<section class="bg-off-white" id="news">
+  <div class="container">
+    <p class="section-label">News</p>
+    <h2>Publications, Events &amp; News</h2>
+    <div class="feed-filters" id="feed-filters">
+      <button class="feed-filter active" data-filter="all">All</button>
+      <button class="feed-filter" data-filter="publication">Publications</button>
+      <button class="feed-filter" data-filter="event">Events</button>
+      <button class="feed-filter" data-filter="news">News</button>
+    </div>
+    <ul class="feed-list" id="feed-list">
+
+      {{!-- Dynamic feed from Ghost posts (excluding newsletter issues) --}}
+      {{#get "posts" filter="tag:-yesterday-in-ai" limit="30" order="published_at desc"}}
+        {{#foreach posts}}
+          <li class="feed-item" data-type="{{#foreach tags}}{{#if @first}}{{slug}}{{/if}}{{/foreach}}">
+            <span class="feed-date">{{date published_at format="YYYY"}}</span>
+            <div class="feed-content">
+              <h4>
+                {{#foreach tags}}
+                  {{#if @first}}
+                    <span class="feed-type-badge {{slug}}">{{name}}</span>
+                  {{/if}}
+                {{/foreach}}
+                <a href="{{url}}">{{title}}</a>
+              </h4>
+              {{#if custom_excerpt}}
+                <p class="feed-meta">{{custom_excerpt}}</p>
+              {{else if excerpt}}
+                <p class="feed-meta">{{excerpt words="20"}}</p>
+              {{/if}}
+            </div>
+          </li>
+        {{/foreach}}
+      {{/get}}
+
+      {{!-- Static feed items (from site-data.js) shown as fallback --}}
+      {{!-- These can be removed once all content is migrated to Ghost posts --}}
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2025</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Build Agent Advocates, Not Platform Agents</h4>
+          <p class="feed-meta">Kapoor, Kolt, Lazar &middot; ICML 2025</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2025</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Infrastructure for AI Agents</h4>
+          <p class="feed-meta">Lazar, Perrier, Chan &middot; Preprint</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2025</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Can LLMs Advance Democratic Values?</h4>
+          <p class="feed-meta">Lazar, Manuali &middot; FAccT 2025</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2025</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>No Right to an Explanation</h4>
+          <p class="feed-meta">Karlan, Kugelberg &middot; Philosophy and Phenomenological Research</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2025</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Moral Disagreement and the Limits of AI Value Alignment</h4>
+          <p class="feed-meta">Schuster, Kilov &middot; AI &amp; Society</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Governing the Algorithmic City</h4>
+          <p class="feed-meta">Lazar &middot; Philosophy &amp; Public Affairs</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Moral Agency Without Consciousness</h4>
+          <p class="feed-meta">Semler &middot; Canadian Journal of Philosophy</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Attention, Moral Skill, and Algorithmic Recommendation</h4>
+          <p class="feed-meta">Lazar, Schuster &middot; Philosophical Studies</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>On the Site of Predictive Justice</h4>
+          <p class="feed-meta">Lazar, Stone &middot; Nous</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="publication">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge publication">publication</span>Frontier AI Ethics</h4>
+          <p class="feed-meta">Lazar &middot; Aeon</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="event">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge event">event</span>Sociotechnical AI Safety Retreat</h4>
+          <p class="feed-meta">Kioloa Coastal Campus &mdash; focused research workshop on integrated approaches to AI safety</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="event">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge event">event</span>Gianelli Annual Lecture: On AI Personhood Without Sentience</h4>
+          <p class="feed-meta">Seth Lazar at St. John&rsquo;s University</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="event">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge event">event</span>Workshop: The Philosophy of AI &mdash; Themes from Seth Lazar</h4>
+          <p class="feed-meta">University of Hong Kong</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="event">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge event">event</span>NeurIPS Keynote: Philosophical Foundations for Pluralistic Alignment</h4>
+          <p class="feed-meta">Invited keynote at NeurIPS conference</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="event">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge event">event</span>Australian AI Safety Forum</h4>
+          <p class="feed-meta">Keynote presentation on AI governance and safety policy</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="news">
+        <span class="feed-date">2025</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge news">news</span>MINT Lab Moves to Johns Hopkins University</h4>
+          <p class="feed-meta">The lab relocates from the Australian National University to the Department of Philosophy at Johns Hopkins</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="news">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge news">news</span>Seth Lazar Joins Knight Institute as Senior AI Advisor</h4>
+          <p class="feed-meta">Knight First Amendment Institute, 2024&ndash;2025 appointment</p>
+        </div>
+      </li>
+      <li class="feed-item" data-type="news">
+        <span class="feed-date">2024</span>
+        <div class="feed-content">
+          <h4><span class="feed-type-badge news">news</span>UN Human Development Report Features MINT Research</h4>
+          <p class="feed-meta">Seth Lazar&rsquo;s work on algorithmic power highlighted in the UN&rsquo;s flagship report</p>
+        </div>
+      </li>
+
+    </ul>
+    <button class="feed-show-more" id="feed-show-more">Show all</button>
+  </div>
+</section>
+
+{{!-- ============================================================
+     PEOPLE
+     ============================================================ --}}
+<section id="people">
+  <div class="container">
+    <p class="section-label">People</p>
+    <h2>Our Team</h2>
+    <div id="people-container"></div>
+  </div>
+</section>
+
+{{!-- ============================================================
+     SUBSCRIBE
+     ============================================================ --}}
+{{> subscribe-form}}

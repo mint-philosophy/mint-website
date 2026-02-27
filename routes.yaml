@@ -1,0 +1,17 @@
+routes:
+  /: home
+
+collections:
+  /newsletter/:
+    permalink: /newsletter/{slug}/
+    template: index
+    filter: "tag:yesterday-in-ai"
+    data: tag.yesterday-in-ai
+  /feed/:
+    permalink: /feed/{slug}/
+    template: index
+    filter: "tag:-yesterday-in-ai+tag:-philosophy-of-computing"
+
+taxonomies:
+  tag: /tag/{slug}/
+  author: /author/{slug}/

@@ -1,0 +1,30 @@
+{
+  "name": "mint-ghost-theme",
+  "description": "MINT Lab Ghost Theme — Machine Intelligence and Normative Theory",
+  "version": "1.0.0",
+  "engines": {
+    "ghost": ">=5.0.0",
+    "ghost-api": "v5"
+  },
+  "license": "MIT",
+  "config": {
+    "posts_per_page": 15,
+    "image_sizes": {
+      "xs": { "width": 150 },
+      "s": { "width": 400 },
+      "m": { "width": 750 },
+      "l": { "width": 1000 }
+    }
+  },
+  "author": {
+    "name": "MINT Lab",
+    "url": "https://mintresearch.org"
+  },
+  "keywords": [
+    "ghost-theme",
+    "mint-lab",
+    "research",
+    "philosophy",
+    "ai"
+  ]
+}

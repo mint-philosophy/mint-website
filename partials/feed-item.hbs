@@ -1,0 +1,18 @@
+<li class="feed-item">
+  <span class="feed-date">{{date published_at format="YYYY"}}</span>
+  <div class="feed-content">
+    <h4>
+      {{#foreach tags}}
+        {{#if @first}}
+          <span class="feed-type-badge {{slug}}">{{name}}</span>
+        {{/if}}
+      {{/foreach}}
+      <a href="{{url}}">{{title}}</a>
+    </h4>
+    {{#if custom_excerpt}}
+      <p class="feed-meta">{{custom_excerpt}}</p>
+    {{else if excerpt}}
+      <p class="feed-meta">{{excerpt words="20"}}</p>
+    {{/if}}
+  </div>
+</li>
