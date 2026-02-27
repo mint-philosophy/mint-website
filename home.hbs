@@ -17,9 +17,9 @@
      ============================================================ --}}
 <section class="bg-off-white" id="about">
   <div class="container">
-    <p class="section-label">About</p>
-    <h2>The Lab</h2>
-    <div class="about-content">
+    <p class="section-label" data-reveal>About</p>
+    <h2 data-reveal>The Lab</h2>
+    <div class="about-content" data-reveal>
       <p>MINT Lab develops robust philosophical foundations for AI governance and safety. We do empirically- and technically-grounded philosophical work on AI and computational technologies, bridging normative theory with real-world impact through policy engagement, industry collaboration, and public scholarship.</p>
       <p><span class="pi-name">Seth Lazar</span> is Professor of Philosophy at Johns Hopkins University and founding director of MINT Lab. His research focuses on the normative philosophy of computing&thinsp;&mdash;&thinsp;foundational questions about what computational tools should be used for, who decides, and how AI systems reshape power, agency, and moral life. He is also a Distinguished Research Fellow at the University of Oxford Institute for Ethics in AI.</p>
     </div>
@@ -31,11 +31,11 @@
      ============================================================ --}}
 <section id="research">
   <div class="container">
-    <p class="section-label">Research</p>
-    <h2>Current Projects</h2>
-    <div class="projects-grid" id="projects-grid">
+    <p class="section-label" data-reveal>Research</p>
+    <h2 data-reveal>Current Projects</h2>
+    <div class="projects-grid" id="projects-grid" data-reveal-stagger>
 
-      <div class="project-card" id="project-normative-competence">
+      <div class="project-card" id="project-normative-competence" data-reveal>
         <div class="project-header">
           <h3>
             <span class="project-icon">&#x2696;&#xFE0F;</span>
@@ -49,7 +49,7 @@
         </div>
       </div>
 
-      <div class="project-card" id="project-agents">
+      <div class="project-card" id="project-agents" data-reveal>
         <div class="project-header">
           <h3>
             <span class="project-icon">&#x1F916;</span>
@@ -63,7 +63,7 @@
         </div>
       </div>
 
-      <div class="project-card" id="project-post-agi">
+      <div class="project-card" id="project-post-agi" data-reveal>
         <div class="project-header">
           <h3>
             <span class="project-icon">&#x1F310;</span>
@@ -86,15 +86,15 @@
      ============================================================ --}}
 <section class="bg-off-white" id="news">
   <div class="container">
-    <p class="section-label">News</p>
-    <h2>Publications, Events &amp; News</h2>
-    <div class="feed-filters" id="feed-filters">
+    <p class="section-label" data-reveal>News</p>
+    <h2 data-reveal>Publications, Events &amp; News</h2>
+    <div class="feed-filters" id="feed-filters" data-reveal>
       <button class="feed-filter active" data-filter="all">All</button>
       <button class="feed-filter" data-filter="publication">Publications</button>
       <button class="feed-filter" data-filter="event">Events</button>
       <button class="feed-filter" data-filter="news">News</button>
     </div>
-    <ul class="feed-list" id="feed-list">
+    <ul class="feed-list" id="feed-list" data-reveal>
 
       {{!-- Dynamic feed from Ghost posts (excluding newsletter issues) --}}
       {{#get "posts" filter="tag:-yesterday-in-ai" limit="30" order="published_at desc"}}
@@ -259,9 +259,9 @@
      ============================================================ --}}
 <section id="people">
   <div class="container">
-    <p class="section-label">People</p>
-    <h2>Our Team</h2>
-    <div id="people-container"></div>
+    <p class="section-label" data-reveal>People</p>
+    <h2 data-reveal>Our Team</h2>
+    <div id="people-container" data-reveal></div>
   </div>
 </section>
 

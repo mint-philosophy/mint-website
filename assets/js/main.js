@@ -66,6 +66,39 @@
   }
 
 
+  // ---- Scroll Reveal (Intersection Observer) ----
+
+  var revealElements = $$('[data-reveal]');
+  if (revealElements.length && 'IntersectionObserver' in window) {
+    // Set stagger index on children of stagger containers
+    $$('[data-reveal-stagger]').forEach(function (container) {
+      var children = container.querySelectorAll('[data-reveal]');
+      children.forEach(function (child, i) {
+        child.style.setProperty('--reveal-i', i);
+      });
+    });
+
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.15,
+      rootMargin: '0px 0px -40px 0px'
+    });
+
+    revealElements.forEach(function (el) {
+      revealObserver.observe(el);
+    });
+  } else {
+    // Fallback: show everything immediately
+    revealElements.forEach(function (el) { el.classList.add('visible'); });
+  }
+
+
   // ---- Project Card Expand/Collapse ----
 
   var projectHeaders = $$('.project-header');

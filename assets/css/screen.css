@@ -1408,6 +1408,42 @@ section {
 }
 
 
+/* ---- Scroll Reveal ---- */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+[data-reveal].visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal="fade"] {
+  transform: none;
+}
+
+[data-reveal="fade"].visible {
+  opacity: 1;
+}
+
+/* Staggered children: each child delays slightly */
+[data-reveal-stagger] > [data-reveal] {
+  transition-delay: calc(var(--reveal-i, 0) * 0.08s);
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+
 /* ---- Utility ---- */
 
 .sr-only {
