@@ -64,6 +64,25 @@ The theme uses [Ghost Handlebars](https://ghost.org/docs/themes/) templates.
 --gray: #636e72;       /* secondary text */
 ```
 
+## House Tracker (private page)
+
+`/coquelin/` is a private house-furnishing tracker (template `house-tracker.hbs`,
+app `assets/js/house-tracker.js`, styles `assets/css/house-tracker.css`). It is
+`noindex`, unlinked, and shows only an unlock screen until a GitHub token with
+access to this repo is pasted in (stored in that browser's localStorage).
+
+State lives in `assets/data/house-tracker.json`. The page reads/writes it via
+the GitHub Contents API, so edits sync across devices — and agents can edit the
+JSON directly in the repo (keep the schema: each item has `id`, `room`, `name`,
+`source`, `status` one of `todo|ordered|delivered|done`, `suggested`, `notes`,
+`dates`). The page looks for the data file on the saved branch, then the repo
+default branch. Note the repo is public, so don't put anything sensitive
+(addresses, prices are fine at your discretion) in the JSON.
+
+Deploying the tracker requires **both** a theme re-upload (see below) **and**
+re-uploading `routes.yaml` (Ghost admin → Settings → Labs → Routes) because of
+the new `/coquelin/` route.
+
 ## Deploying Changes
 
 After editing theme files:

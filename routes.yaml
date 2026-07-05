@@ -1,5 +1,6 @@
 routes:
   /: home
+  /coquelin/: house-tracker
 
 collections:
   /newsletter/:
