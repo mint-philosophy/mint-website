@@ -26,6 +26,17 @@
     delivered: 'Picked up or delivered',
     done: 'Installed / finished'
   };
+  // Container items are already owned — they ship, arrive, get put in place.
+  var CONTAINER_STAGES = ['todo', 'delivered', 'done'];
+  var CONTAINER_LABEL = { todo: 'Coming', delivered: 'Arrived', done: 'In place' };
+  var CONTAINER_HINT = {
+    todo: 'In the container / in transit',
+    delivered: 'Arrived at the house',
+    done: 'Unpacked and in place'
+  };
+
+  var PRIORITIES = ['normal', 'urgent', 'later'];
+  var PRIORITY_RANK = { urgent: 0, normal: 1, later: 2 };
 
   var state = {
     data: null,
@@ -119,6 +130,10 @@
             localStorage.setItem(LS_BRANCH, tries[idx]);
             state.sha = file.sha;
             state.data = JSON.parse(b64DecodeUtf8(file.content));
+            state.data.items.forEach(function (x) {
+              if (PRIORITIES.indexOf(x.priority) === -1) x.priority = 'normal';
+              x.container = !!x.container;
+            });
             state.lastSync = new Date();
           });
         });
@@ -220,6 +235,14 @@
     render();
   }
 
+  function stagesFor(it) {
+    return it.container ? CONTAINER_STAGES : STAGES;
+  }
+
+  function stageLabel(it, s) {
+    return it.container ? CONTAINER_LABEL[s] : STAGE_LABEL[s];
+  }
+
   function matchesFilter(it) {
     if (state.search) {
       var q = state.search.toLowerCase();
@@ -228,7 +251,17 @@
     }
     if (state.filter === 'all') return true;
     if (state.filter === 'ideas') return !!it.suggested;
+    if (state.filter === 'urgent') return !it.suggested && it.priority === 'urgent' && it.status !== 'done';
+    if (state.filter === 'container') return it.container;
     return !it.suggested && it.status === state.filter;
+  }
+
+  function sortByPriority(items) {
+    return items.map(function (it, i) { return [it, i]; })
+      .sort(function (a, b) {
+        return (PRIORITY_RANK[a[0].priority] - PRIORITY_RANK[b[0].priority]) || (a[1] - b[1]);
+      })
+      .map(function (pair) { return pair[0]; });
   }
 
   /* ---------- rendering ---------- */
@@ -311,18 +344,23 @@
   }
 
   function itemRow(it) {
-    var stamps = STAGES.filter(function (s) { return s !== 'todo' && it.dates && it.dates[s]; })
-      .map(function (s) { return STAGE_LABEL[s].toLowerCase() + ' ' + fmtDate(it.dates[s]); })
+    var hints = it.container ? CONTAINER_HINT : STAGE_HINT;
+    var stamps = stagesFor(it).filter(function (s) { return s !== 'todo' && it.dates && it.dates[s]; })
+      .map(function (s) { return stageLabel(it, s).toLowerCase() + ' ' + fmtDate(it.dates[s]); })
       .join(' · ');
-    var seg = STAGES.map(function (s) {
-      return '<button class="seg s-' + s + (it.status === s ? ' on' : '') + '" title="' + STAGE_HINT[s] +
-        '" data-act="status" data-id="' + it.id + '" data-status="' + s + '">' + STAGE_LABEL[s] + '</button>';
+    var seg = stagesFor(it).map(function (s) {
+      return '<button class="seg s-' + s + (it.status === s ? ' on' : '') + '" title="' + hints[s] +
+        '" data-act="status" data-id="' + it.id + '" data-status="' + s + '">' + stageLabel(it, s) + '</button>';
     }).join('');
     var notesOpen = !!state.openNotes[it.id];
-    return '<div class="item' + (it.suggested ? ' suggested' : '') + ' st-' + it.status + '" data-id="' + it.id + '">' +
+    return '<div class="item' + (it.suggested ? ' suggested' : '') + ' st-' + it.status +
+      ' p-' + (it.priority || 'normal') + '" data-id="' + it.id + '">' +
       '<div class="item-main">' +
         '<div class="item-name">' + esc(it.name) +
           (it.source ? ' <span class="src">' + esc(it.source) + '</span>' : '') +
+          (it.container ? ' <span class="box-badge" title="Coming in the container">📦 container</span>' : '') +
+          (it.priority === 'urgent' ? ' <span class="pri-badge urgent">urgent</span>' : '') +
+          (it.priority === 'later' ? ' <span class="pri-badge later">can wait</span>' : '') +
           (it.suggested ? ' <span class="idea-badge">idea</span>' : '') +
         '</div>' +
         (stamps ? '<div class="stamps">' + esc(stamps) + '</div>' : '') +
@@ -333,6 +371,10 @@
           ? '<button class="mini add" data-act="adopt" data-id="' + it.id + '">＋ Add to list</button>' +
             '<button class="mini dismiss" data-act="del" data-id="' + it.id + '">Dismiss</button>'
           : '<div class="segs">' + seg + '</div>' +
+            '<button class="mini pri pri-' + it.priority + '" data-act="priority" data-id="' + it.id +
+              '" title="Priority: ' + it.priority + ' (tap to change)">⚑</button>' +
+            '<button class="mini box' + (it.container ? ' on' : '') + '" data-act="container" data-id="' + it.id +
+              '" title="' + (it.container ? 'In the container' : 'Mark as coming in the container') + '">📦</button>' +
             '<button class="mini" data-act="notes" data-id="' + it.id + '" title="Notes">📝</button>' +
             '<button class="mini danger" data-act="del" data-id="' + it.id + '" title="Delete">✕</button>') +
       '</div>' +
@@ -345,9 +387,17 @@
   function renderApp() {
     var overall = progressFor(state.data.items);
     var ideasCount = state.data.items.filter(function (it) { return it.suggested; }).length;
+    var urgentCount = state.data.items.filter(function (it) {
+      return !it.suggested && it.priority === 'urgent' && it.status !== 'done';
+    }).length;
+    var containerCount = state.data.items.filter(function (it) { return it.container; }).length;
     var filters = [
-      ['all', 'All'], ['todo', 'Need'], ['ordered', 'Ordered'],
-      ['delivered', 'Delivered'], ['done', 'Done'], ['ideas', 'Ideas (' + ideasCount + ')']
+      ['all', 'All'],
+      ['urgent', '⚑ Urgent (' + urgentCount + ')'],
+      ['todo', 'Need'], ['ordered', 'Ordered'],
+      ['delivered', 'Delivered'], ['done', 'Done'],
+      ['container', '📦 Container (' + containerCount + ')'],
+      ['ideas', 'Ideas (' + ideasCount + ')']
     ];
 
     var html =
@@ -372,7 +422,7 @@
     html += '<main>';
     allRooms().forEach(function (room) {
       var items = itemsByRoom(room);
-      var visible = items.filter(matchesFilter);
+      var visible = sortByPriority(items.filter(matchesFilter));
       if (!visible.length && (state.filter !== 'all' || state.search)) return;
       var p = progressFor(items);
       var collapsed = !!state.collapsed[room];
@@ -388,6 +438,7 @@
           '<form class="add-form" data-room="' + esc(room) + '">' +
             '<input name="name" placeholder="Add item…" autocomplete="off">' +
             '<input name="source" placeholder="Store (optional)" autocomplete="off">' +
+            '<label class="box-check" title="Coming in the container"><input type="checkbox" name="container">📦</label>' +
             '<button type="submit">Add</button>' +
           '</form>' +
         '</div>';
@@ -429,7 +480,8 @@
         state.data.items.push({
           id: uid(), room: form.getAttribute('data-room'), name: name,
           source: form.elements.source.value.trim(), status: 'todo',
-          suggested: false, notes: '', dates: {}
+          suggested: false, notes: '', dates: {},
+          priority: 'normal', container: form.elements.container.checked
         });
         scheduleSave();
         render();
@@ -468,6 +520,22 @@
         break;
       case 'adopt':
         if (it) { it.suggested = false; scheduleSave(); render(); }
+        break;
+      case 'priority':
+        if (it) {
+          it.priority = PRIORITIES[(PRIORITIES.indexOf(it.priority) + 1) % PRIORITIES.length];
+          scheduleSave();
+          render();
+        }
+        break;
+      case 'container':
+        if (it) {
+          it.container = !it.container;
+          // "Ordered" isn't a container stage; fold it into "coming".
+          if (it.container && it.status === 'ordered') it.status = 'todo';
+          scheduleSave();
+          render();
+        }
         break;
       case 'del':
         if (it && (it.suggested || confirm('Delete "' + it.name + '"?'))) {

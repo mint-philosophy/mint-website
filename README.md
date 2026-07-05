@@ -75,7 +75,9 @@ State lives in `assets/data/house-tracker.json`. The page reads/writes it via
 the GitHub Contents API, so edits sync across devices — and agents can edit the
 JSON directly in the repo (keep the schema: each item has `id`, `room`, `name`,
 `source`, `status` one of `todo|ordered|delivered|done`, `suggested`, `notes`,
-`dates`). The page looks for the data file on the saved branch, then the repo
+`dates`, `priority` one of `urgent|normal|later`, and `container` — true for
+things already owned and arriving in the shipping container, which display the
+stages Coming → Arrived → In place instead of the buy pipeline). The page looks for the data file on the saved branch, then the repo
 default branch. Note the repo is public, so don't put anything sensitive
 (addresses, prices are fine at your discretion) in the JSON.
 

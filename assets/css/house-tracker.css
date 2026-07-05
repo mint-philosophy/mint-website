@@ -224,6 +224,35 @@ main { max-width: 60rem; margin: 1rem auto 4rem; padding: 0 1rem; }
   vertical-align: middle;
 }
 
+.pri-badge {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-radius: 4px;
+  padding: 0 .3rem;
+  margin-left: .3rem;
+  vertical-align: middle;
+}
+
+.pri-badge.urgent { color: #fff; background: var(--red); }
+.pri-badge.later { color: var(--gray); border: 1px solid var(--gray); }
+
+.box-badge {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--blue);
+  background: #ebf4ff;
+  border-radius: 4px;
+  padding: .05rem .35rem;
+  margin-left: .3rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.item.p-urgent { box-shadow: inset 3px 0 0 var(--red); }
+.item.p-later .item-name { color: var(--gray); }
+
 .stamps { font-size: .72rem; color: var(--gray); margin-top: .1rem; }
 
 .note-preview {
@@ -271,6 +300,12 @@ main { max-width: 60rem; margin: 1rem auto 4rem; padding: 0 1rem; }
 
 .mini:hover { background: var(--bg); }
 .mini.danger { color: var(--red); }
+.mini.pri-normal { color: #b8c1c8; }
+.mini.pri-urgent { color: #fff; background: var(--red); border-color: var(--red); }
+.mini.pri-urgent:hover { background: #9b2c2c; }
+.mini.pri-later { color: var(--gray); background: var(--bg); }
+.mini.box { color: #b8c1c8; filter: grayscale(1); opacity: .65; }
+.mini.box.on { filter: none; opacity: 1; background: #ebf4ff; border-color: var(--blue); }
 .mini.add { background: var(--mint); border-color: var(--mint); color: var(--navy); font-weight: 700; }
 .mini.add:hover { background: var(--mint-light); }
 .mini.dismiss { color: var(--gray); }
@@ -306,6 +341,16 @@ main { max-width: 60rem; margin: 1rem auto 4rem; padding: 0 1rem; }
 
 .add-form input[name="name"] { flex: 2; min-width: 8rem; }
 .add-form input[name="source"] { flex: 1; min-width: 6rem; }
+
+.box-check {
+  display: flex;
+  align-items: center;
+  gap: .2rem;
+  font-size: .9rem;
+  color: var(--gray);
+  cursor: pointer;
+  user-select: none;
+}
 
 .add-form button {
   border: 0;
