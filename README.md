@@ -87,7 +87,7 @@ the new `/coquelin/` route.
 
 ## The DC Summer Camp Guide (public page)
 
-`/camps/` is a public hub for DC-area summer camps (template `camps.hbs`, app
+`/camps/` is a sign-in-gated (currently single-user) hub for DC-area summer camps — passphrase hash lives in `AUTH_HASH` at the top of the JS (template `camps.hbs`, app
 `assets/js/camps-hub.js`, styles `assets/css/camps-hub.css`). Data lives in
 `assets/data/camps.json`; the page fetches it from GitHub raw (main branch
 first) so **data commits go live without a theme re-upload**. A weekly routine

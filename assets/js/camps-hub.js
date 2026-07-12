@@ -12,6 +12,12 @@
 (function () {
   'use strict';
 
+  // Private preview: page is sign-in gated for now (single user). To change the
+  // passphrase, put the sha256 hex of the new one here. Note the underlying
+  // camps.json is still public in the GitHub repo — this gates the app, not the data.
+  var AUTH_HASH = '298ad48fce2fbb1ed100ce1abc418906dc2017d137670b9fcbed9315a0f14b21';
+  var AUTH_LS = 'camps_auth_v1';
+
   var DATA_SOURCES = [
     'https://raw.githubusercontent.com/mint-philosophy/mint-website/main/assets/data/camps.json',
     'https://raw.githubusercontent.com/mint-philosophy/mint-website/claude/house-furnishing-tracker-uzeqcs/assets/data/camps.json',
@@ -481,13 +487,46 @@
 
   /* ---------------- shell ---------------- */
 
+  function authed() {
+    return localStorage.getItem(AUTH_LS) === AUTH_HASH;
+  }
+
+  function sha256Hex(str) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+      return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    });
+  }
+
+  function renderLogin(err) {
+    app.innerHTML =
+      '<div class="login-wall"><div class="login-card">' +
+        '<div class="eyebrow">Private preview</div>' +
+        '<h1>The DC Summer Camp Guide</h1>' +
+        '<p>This guide is not public yet. Sign in to continue.</p>' +
+        (err ? '<p class="login-err">' + esc(err) + '</p>' : '') +
+        '<form id="login-form">' +
+          '<input id="login-pass" type="password" placeholder="Passphrase" autocomplete="current-password" autofocus>' +
+          '<button type="submit">Sign in</button>' +
+        '</form>' +
+      '</div></div>';
+    document.getElementById('login-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = document.getElementById('login-pass').value;
+      sha256Hex(v).then(function (h) {
+        if (h === AUTH_HASH) { localStorage.setItem(AUTH_LS, h); render(); }
+        else renderLogin('That passphrase isn’t right.');
+      });
+    });
+  }
+
   function render() {
+    if (!authed()) { renderLogin(); return; }
     if (!state.data) { app.innerHTML = '<div class="shell"><p class="loading">Loading the guide…</p></div>'; return; }
     var d = state.data;
     var views = [['directory', 'Directory'], ['calendar', '2027 calendar'], ['match', 'Find a fit'], ['concierge', 'Ask the concierge']];
     app.innerHTML =
       '<header class="mast"><div class="shell">' +
-        '<div class="eyebrow">An independent public guide · updated ' + esc(d.updated || '') + '</div>' +
+        '<div class="eyebrow">Private preview · updated ' + esc(d.updated || '') + '</div>' +
         '<h1>The DC Summer Camp Guide</h1>' +
         '<p class="dek">Every summer camp and camp-style program we can find in DC and close-in Maryland — government, nonprofit, private, museum, YMCA and school-run — tagged, searchable, and honest about how registration really works. Built because no central hub existed.</p>' +
         '<div class="statrow"><div class="stat"><b>' + d.providers.length + '</b><span>programs</span></div>' +
@@ -502,8 +541,8 @@
          state.view === 'calendar' ? calendarView() :
          state.view === 'match' ? matchView() : conciergeView()) +
       '</main>' +
-      '<footer><div class="shell"><p>Researched and maintained with AI assistance by the MINT Lab household; data is checked against official sources but is not official — always confirm dates, prices and availability with the provider. ' +
-      'Corrections and additions: open an issue on <a href="https://github.com/mint-philosophy/mint-website" target="_blank" rel="noopener">GitHub</a>. Dataset: <a href="https://raw.githubusercontent.com/mint-philosophy/mint-website/main/assets/data/camps.json" target="_blank" rel="noopener">camps.json</a> (free to reuse with credit).</p></div></footer>';
+      '<footer><div class="shell"><p>Private preview — researched with AI assistance and checked against official sources, but not official: always confirm dates, prices and availability with the provider. ' +
+      'Dataset: <a href="https://raw.githubusercontent.com/mint-philosophy/mint-website/main/assets/data/camps.json" target="_blank" rel="noopener">camps.json</a> · refreshed weekly. <button class="linky" data-act="signout">Sign out on this device</button></p></div></footer>';
     bind();
   }
 
@@ -531,6 +570,7 @@
           if (v) { localStorage.setItem(KEY_LS, v); render(); }
         }
         if (act === 'forget-key') { localStorage.removeItem(KEY_LS); state.chat = []; render(); }
+        if (act === 'signout') { localStorage.removeItem(AUTH_LS); render(); }
       });
     });
     var q = document.getElementById('q');
