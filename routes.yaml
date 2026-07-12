@@ -1,6 +1,7 @@
 routes:
   /: home
   /coquelin/: house-tracker
+  /camps/: camps
 
 collections:
   /newsletter/:

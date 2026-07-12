@@ -85,6 +85,29 @@ Deploying the tracker requires **both** a theme re-upload (see below) **and**
 re-uploading `routes.yaml` (Ghost admin → Settings → Labs → Routes) because of
 the new `/coquelin/` route.
 
+## The DC Summer Camp Guide (public page)
+
+`/camps/` is a public hub for DC-area summer camps (template `camps.hbs`, app
+`assets/js/camps-hub.js`, styles `assets/css/camps-hub.css`). Data lives in
+`assets/data/camps.json`; the page fetches it from GitHub raw (main branch
+first) so **data commits go live without a theme re-upload**. A weekly routine
+re-verifies availability and 2027 registration windows and pushes updates.
+
+Each provider entry: `id`, `name`, `org`, `org_type`, `description`,
+`categories[]`, `tags[]` (controlled vocabularies — see the top of
+`camps-hub.js`), `ages`, `areas[]`, `locations`, `price_band`
+(`free|$|$$|$$$|$$$$|varies`), `price_detail`, `financial_aid`, `hours`,
+`extended_care`, `url`, `url_register`, `url_more`, `phone`, `email`,
+`reg_2027{opens,mechanism,notes}`, `status_2026`, `sessions_2026`,
+`fit_notes`, `confidence`.
+
+The page includes an AI concierge that calls the Anthropic API directly from
+the browser with the visitor's own key (stored in their localStorage only),
+giving Claude search tools over the dataset.
+
+Deploying page changes needs a theme re-upload + `routes.yaml` re-upload
+(route `/camps/`). Data-only changes need just a push to main.
+
 ## Deploying Changes
 
 After editing theme files:
