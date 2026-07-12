@@ -76,10 +76,21 @@
   /* ---------------- search & filter ---------------- */
 
   function ageFits(p, age) {
-    // ages is free text like "6-14 (grade bands)"; extract the outermost numeric range.
-    var m = String(p.ages || '').match(/(\d+)\s*(?:-|to|through|–)\s*(\d+)/);
-    if (!m) return true; // unknown — don't exclude
-    return age >= parseInt(m[1], 10) - 0.5 && age <= parseInt(m[2], 10) + 0.5;
+    // ages is free text: "6-14", "entering grades 9-11", "Pre-K through grade 12".
+    // Grade ranges convert to approximate ages (grade N ≈ ages N+5 to N+6).
+    var s = String(p.ages || '');
+    var re = /(ages?\s*)?(grades?\s*)?(\d+)\s*(?:-|–|to|through)\s*(?:grades?\s*)?(\d+)/ig;
+    var m, best = null;
+    while ((m = re.exec(s)) !== null) {
+      var isGrade = !!m[2] || /grade/i.test(s.slice(Math.max(0, m.index - 12), m.index));
+      var lo = parseInt(m[3], 10), hi = parseInt(m[4], 10);
+      if (isGrade) { lo += 5; hi += 6; }
+      if (!best) best = { lo: lo, hi: hi, aged: !!m[1] && !isGrade };
+      else if (!!m[1] && !isGrade && !best.aged) best = { lo: lo, hi: hi, aged: true };
+      else if (!best.aged) { best.lo = Math.min(best.lo, lo); best.hi = Math.max(best.hi, hi); }
+    }
+    if (!best) return true; // unknown — don't exclude
+    return age >= best.lo - 0.5 && age <= best.hi + 0.5;
   }
 
   function searchScore(p, q) {
