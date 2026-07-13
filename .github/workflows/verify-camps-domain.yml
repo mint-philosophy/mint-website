@@ -1,6 +1,6 @@
 # Temporary: probe camps.mintresearch.org domain/cert state and write the
 # result to a status file on this branch (MCP log access is down, so the
-# workflow reports via git). Delete after use. Probe 3.
+# workflow reports via git). Delete after use. Probe 4.
 name: Verify camps subdomain
 on:
   push:
