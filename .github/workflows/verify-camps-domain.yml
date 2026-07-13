@@ -1,6 +1,6 @@
 # Temporary: re-register camps.mintresearch.org on the Pages site via the
 # API (the CNAME-file path no longer registers domains on existing sites),
-# then report certificate state. Delete after use.
+# then report certificate state. Delete after use. Check-in probe 1.
 name: Verify camps subdomain
 on:
   push:
