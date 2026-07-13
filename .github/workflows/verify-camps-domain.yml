@@ -1,5 +1,6 @@
-# Temporary: diagnose stuck HTTPS provisioning for camps.mintresearch.org.
-# Delete after use.
+# Temporary: re-register camps.mintresearch.org on the Pages site via the
+# API (the CNAME-file path no longer registers domains on existing sites),
+# then report certificate state. Delete after use.
 name: Verify camps subdomain
 on:
   push:
@@ -7,29 +8,30 @@ on:
       - '.github/workflows/verify-camps-domain.yml'
 
 permissions:
-  pages: read
+  pages: write
   contents: read
 
 jobs:
-  diagnose:
+  set-domain:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Pages API state
+      - name: Set custom domain via Pages API
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/pages | \
-            python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({k: d.get(k) for k in ["url","status","cname","custom_404","html_url","source","protected_domain_state","pending_domain_unverified_at","https_certificate","https_enforced"]}, indent=2))'
-      - name: DNS + CAA
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/pages \
+            -d '{"cname":"camps.mintresearch.org"}')
+          echo "PUT status: $code"; cat resp.json || true
+      - name: Report domain + certificate state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sudo apt-get install -yq dnsutils >/dev/null 2>&1 || true
-          echo '--- CNAME chain ---'; dig +short camps.mintresearch.org CNAME; dig +short camps.mintresearch.org A; dig +short camps.mintresearch.org AAAA
-          echo '--- CAA apex ---'; dig +short mintresearch.org CAA
-          echo '--- CAA subdomain ---'; dig +short camps.mintresearch.org CAA
-      - name: Plain HTTP + github.io behavior
-        run: |
-          curl -sS -o /dev/null -D - --max-time 15 http://camps.mintresearch.org/ | head -12 || true
-          echo '---'
-          curl -sS -o /dev/null -D - --max-time 15 https://mint-philosophy.github.io/mint-website/ | head -8 || true
+          for i in 1 2 3 4 5 6; do
+            sleep 20
+            curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${GITHUB_REPOSITORY}/pages | \
+              python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({"cname": d.get("cname"), "protected_domain_state": d.get("protected_domain_state"), "https_certificate": d.get("https_certificate"), "https_enforced": d.get("https_enforced")}))'
+          done
