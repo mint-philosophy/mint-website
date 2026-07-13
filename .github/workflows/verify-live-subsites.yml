@@ -1,0 +1,49 @@
+# Temporary: one-shot live check of mintresearch.org/camps/ and /coquelin/
+# after the July 2026 move into the mintresearch.org repo. Delete after use.
+name: Verify live subsites
+on:
+  push:
+    paths:
+      - '.github/workflows/verify-live-subsites.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: HTTP checks
+        run: |
+          set -x
+          curl -sS -o /dev/null -w 'camps: %{http_code} %{size_download}B\n' https://mintresearch.org/camps/
+          curl -sS -o /dev/null -w 'camps.json: %{http_code} %{size_download}B\n' https://mintresearch.org/camps/camps.json
+          curl -sS -o /dev/null -w 'coquelin: %{http_code} %{size_download}B\n' https://mintresearch.org/coquelin/
+          curl -sS https://mintresearch.org/camps/ | grep -o '<title>[^<]*</title>'
+      - name: Browser e2e
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm i --no-audit --no-fund playwright >/dev/null 2>&1
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          cat > e2e.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          const errors = [];
+          const browser = await chromium.launch();
+          const page = await (await browser.newContext()).newPage();
+          page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+          page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+          await page.goto('https://mintresearch.org/camps/', { waitUntil: 'networkidle' });
+          console.log('login wall inputs:', await page.locator('input').count());
+          await page.evaluate(() => localStorage.setItem('camps_auth_v1', '298ad48fce2fbb1ed100ce1abc418906dc2017d137670b9fcbed9315a0f14b21'));
+          await page.reload({ waitUntil: 'networkidle' });
+          await page.waitForTimeout(1500);
+          console.log('h1:', (await page.locator('h1').first().textContent() || '').trim());
+          console.log('default cards:', await page.locator('.card').count());
+          const chip = page.locator('[data-act="sports"]');
+          if (await chip.count()) { await chip.first().click(); await page.waitForTimeout(500); console.log('cards with sports:', await page.locator('.card').count()); }
+          await page.goto('https://mintresearch.org/coquelin/', { waitUntil: 'networkidle' });
+          console.log('coquelin title:', await page.title());
+          console.log('coquelin has unlock UI:', /token/i.test(await page.textContent('body')));
+          console.log('JS errors:', errors.length ? errors : 'none');
+          await browser.close();
+          process.exit(errors.length ? 1 : 0);
+          EOF
+          node e2e.mjs
