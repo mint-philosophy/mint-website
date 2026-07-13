@@ -1,0 +1,2 @@
+probe at 2026-07-13T09:44:29Z
+{"cname": null, "https_certificate": null, "https_enforced": true}
