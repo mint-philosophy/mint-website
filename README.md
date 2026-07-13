@@ -12,15 +12,18 @@
 
 | Thing | Lives at | Source |
 |---|---|---|
-| Summer Camps for Kids Who Aren't Sporty | https://mintresearch.org/camps/ (passphrase sign-in) | `mintresearch.org` repo, `public/camps/` (`index.html`, `camps-hub.js`, `camps-hub.css`, `camps.json`) |
+| Summer Camps for Kids Who Aren't Sporty | **https://camps.mintresearch.org** (canonical, passphrase sign-in); also mirrored at https://mintresearch.org/camps/ | `mintresearch.org` repo, `public/camps/` (`index.html`, `camps-hub.js`, `camps-hub.css`, `camps.json`) |
 | House tracker | https://mintresearch.org/coquelin/ (GitHub-token unlock) | `mintresearch.org` repo, `public/coquelin/` — **but its state stays in this repo**, see below |
 
-Both pages follow the site's standard pattern: a folder under `public/` in the
+Both pages' source of truth is a folder under `public/` in the
 `mintresearch.org` repo, deployed automatically by that repo's GitHub Actions
-workflow on every push to `main`. No subdomains, no separate Pages sites, no
-DNS records. (An earlier experiment deploying the camp guide from this repo's
-`gh-pages` branch to `camps.mintresearch.org` was dismantled in July 2026 —
-never add a DNS record for that host.)
+workflow on every push to `main`. Per Seth's preference, standalone apps like
+the camp guide also get their own subdomain: this repo's
+`.github/workflows/deploy-camps-subdomain.yml` mirrors `public/camps/` onto
+the `gh-pages` branch daily (and on dispatch) with the
+`camps.mintresearch.org` CNAME baked in, and GitHub Pages serves it. DNS:
+Cloudflare needs `CNAME camps → mint-philosophy.github.io` (DNS only / grey
+cloud); GitHub auto-issues the HTTPS cert once it propagates.
 
 ## House tracker state (the one live thing in this repo)
 

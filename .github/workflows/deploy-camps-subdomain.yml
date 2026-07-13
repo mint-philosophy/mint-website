@@ -1,0 +1,49 @@
+# Publishes camps.mintresearch.org from this repo's gh-pages branch.
+#
+# The source of truth for the camp guide (app + camps.json) is
+# public/camps/ in mint-philosophy/mintresearch.org — this workflow just
+# mirrors that folder onto gh-pages with the subdomain CNAME baked in.
+# Runs daily (an hour after the Monday 13:00 UTC data-refresh Routine),
+# on manual dispatch, and when this file changes.
+name: Deploy camps.mintresearch.org
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-camps-subdomain.yml'
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch camp guide from mintresearch.org repo
+        uses: actions/checkout@v4
+        with:
+          repository: mint-philosophy/mintresearch.org
+          path: source
+      - name: Assemble site
+        run: |
+          cp -r source/public/camps site
+          echo 'camps.mintresearch.org' > site/CNAME
+          touch site/.nojekyll
+      - name: Push to gh-pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd site
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Sync camps hub from mintresearch.org repo"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
