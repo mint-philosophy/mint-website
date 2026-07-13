@@ -1,37 +1,70 @@
-# Temporary: re-register camps.mintresearch.org on the Pages site via the
-# API (the CNAME-file path no longer registers domains on existing sites),
-# then report certificate state. Delete after use. Check-in probe 1.
+# Temporary: probe camps.mintresearch.org domain/cert state and write the
+# result to a status file on this branch (MCP log access is down, so the
+# workflow reports via git). Delete after use.
 name: Verify camps subdomain
 on:
   push:
+    branches: [claude/house-furnishing-tracker-uzeqcs]
     paths:
       - '.github/workflows/verify-camps-domain.yml'
 
 permissions:
-  pages: write
-  contents: read
+  pages: read
+  contents: write
 
 jobs:
-  set-domain:
+  probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Set custom domain via Pages API
+      - uses: actions/checkout@v4
+      - name: Probe and record
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          code=$(curl -sS -o resp.json -w '%{http_code}' -X PUT \
-            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${GITHUB_REPOSITORY}/pages \
-            -d '{"cname":"camps.mintresearch.org"}')
-          echo "PUT status: $code"; cat resp.json || true
-      - name: Report domain + certificate state
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for i in 1 2 3 4 5 6; do
-            sleep 20
-            curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/${GITHUB_REPOSITORY}/pages | \
-              python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({"cname": d.get("cname"), "protected_domain_state": d.get("protected_domain_state"), "https_certificate": d.get("https_certificate"), "https_enforced": d.get("https_enforced")}))'
-          done
+          out=.github/camps-domain-status.txt
+          echo "probe at $(date -u +%FT%TZ)" > $out
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${GITHUB_REPOSITORY}/pages | \
+            python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({"cname": d.get("cname"), "https_certificate": d.get("https_certificate"), "https_enforced": d.get("https_enforced")}))' >> $out
+          if grep -q '"cname": "camps.mintresearch.org"' $out; then
+            for i in $(seq 1 20); do
+              code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://camps.mintresearch.org/ || echo fail)
+              echo "https attempt $i: $code" >> $out
+              [ "$code" = "200" ] && break
+              sleep 15
+            done
+            if [ "$code" = "200" ]; then
+              curl -sS -o /dev/null -w 'camps.json: %{http_code} %{size_download}B\n' https://camps.mintresearch.org/camps.json >> $out
+              curl -sS https://camps.mintresearch.org/ | grep -o '<title>[^<]*</title>' >> $out
+              npm init -y >/dev/null 2>&1; npm i --no-audit --no-fund playwright >/dev/null 2>&1
+              npx playwright install --with-deps chromium >/dev/null 2>&1
+              cat > e2e.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          const errors = [];
+          const browser = await chromium.launch();
+          const page = await (await browser.newContext()).newPage();
+          page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+          page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+          await page.goto('https://camps.mintresearch.org/', { waitUntil: 'networkidle' });
+          console.log('login wall inputs:', await page.locator('input').count());
+          await page.evaluate(() => localStorage.setItem('camps_auth_v1', '298ad48fce2fbb1ed100ce1abc418906dc2017d137670b9fcbed9315a0f14b21'));
+          await page.reload({ waitUntil: 'networkidle' });
+          await page.waitForTimeout(1500);
+          console.log('h1:', (await page.locator('h1').first().textContent() || '').trim());
+          console.log('default cards:', await page.locator('.card').count());
+          const chip = page.locator('[data-act="sports"]');
+          if (await chip.count()) { await chip.first().click(); await page.waitForTimeout(500); console.log('cards with sports:', await page.locator('.card').count()); }
+          console.log('JS errors:', errors.length ? JSON.stringify(errors) : 'none');
+          await browser.close();
+          EOF
+              node e2e.mjs >> $out 2>&1 || echo 'e2e crashed' >> $out
+              rm -rf e2e.mjs node_modules package.json package-lock.json
+            fi
+          fi
+          cat $out
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $out
+          git commit -m "Record camps domain probe result" || exit 0
+          git push
