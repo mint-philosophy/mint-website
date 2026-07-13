@@ -64,6 +64,50 @@ The theme uses [Ghost Handlebars](https://ghost.org/docs/themes/) templates.
 --gray: #636e72;       /* secondary text */
 ```
 
+## House Tracker (private page)
+
+`/coquelin/` is a private house-furnishing tracker (template `house-tracker.hbs`,
+app `assets/js/house-tracker.js`, styles `assets/css/house-tracker.css`). It is
+`noindex`, unlinked, and shows only an unlock screen until a GitHub token with
+access to this repo is pasted in (stored in that browser's localStorage).
+
+State lives in `assets/data/house-tracker.json`. The page reads/writes it via
+the GitHub Contents API, so edits sync across devices — and agents can edit the
+JSON directly in the repo (keep the schema: each item has `id`, `room`, `name`,
+`source`, `status` one of `todo|ordered|delivered|done`, `suggested`, `notes`,
+`dates`, `priority` one of `urgent|normal|later`, and `container` — true for
+things already owned and arriving in the shipping container, which display the
+stages Coming → Arrived → In place instead of the buy pipeline). The page looks for the data file on the saved branch, then the repo
+default branch. Note the repo is public, so don't put anything sensitive
+(addresses, prices are fine at your discretion) in the JSON.
+
+Deploying the tracker requires **both** a theme re-upload (see below) **and**
+re-uploading `routes.yaml` (Ghost admin → Settings → Labs → Routes) because of
+the new `/coquelin/` route.
+
+## The DC Summer Camp Guide (public page)
+
+`/camps/` is a sign-in-gated (currently single-user) hub for DC-area summer camps — passphrase hash lives in `AUTH_HASH` at the top of the JS (template `camps.hbs`, app
+`assets/js/camps-hub.js`, styles `assets/css/camps-hub.css`). Data lives in
+`assets/data/camps.json`; the page fetches it from GitHub raw (main branch
+first) so **data commits go live without a theme re-upload**. A weekly routine
+re-verifies availability and 2027 registration windows and pushes updates.
+
+Each provider entry: `id`, `name`, `org`, `org_type`, `description`,
+`categories[]`, `tags[]` (controlled vocabularies — see the top of
+`camps-hub.js`), `ages`, `areas[]`, `locations`, `price_band`
+(`free|$|$$|$$$|$$$$|varies`), `price_detail`, `financial_aid`, `hours`,
+`extended_care`, `url`, `url_register`, `url_more`, `phone`, `email`,
+`reg_2027{opens,mechanism,notes}`, `status_2026`, `sessions_2026`,
+`fit_notes`, `confidence`.
+
+The page includes an AI concierge that calls the Anthropic API directly from
+the browser with the visitor's own key (stored in their localStorage only),
+giving Claude search tools over the dataset.
+
+Deploying page changes needs a theme re-upload + `routes.yaml` re-upload
+(route `/camps/`). Data-only changes need just a push to main.
+
 ## Deploying Changes
 
 After editing theme files:
