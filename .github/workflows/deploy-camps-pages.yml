@@ -1,0 +1,46 @@
+name: Deploy camps hub to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/data/camps.json'
+      - 'assets/js/camps-hub.js'
+      - 'assets/css/camps-hub.css'
+      - '.github/pages/**'
+      - '.github/workflows/deploy-camps-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble static site
+        run: |
+          mkdir -p site/assets/css site/assets/js site/assets/data site/assets/images
+          cp .github/pages/index.html site/index.html
+          cp assets/css/camps-hub.css site/assets/css/
+          cp assets/js/camps-hub.js site/assets/js/
+          cp assets/data/camps.json site/assets/data/
+          cp assets/images/favicon.png site/assets/images/
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
