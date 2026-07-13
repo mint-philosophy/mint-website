@@ -1,154 +1,111 @@
-# MINT Lab Website
+# mint-website
 
-Ghost CMS theme for [mintresearch.org](https://mintresearch.org). Ported from the original static site design.
+> **What this repo actually is (July 2026):** the home of **Summer Camps for
+> Kids Who Aren't Sporty** (camps.mintresearch.org) and the family **house
+> tracker** web app, plus the *retired* Ghost theme that used to power
+> mintresearch.org. The live MINT Lab site is **not** served from this repo —
+> it's an Astro static site on GitHub Pages from
+> [`mint-philosophy/mintresearch.org`](https://github.com/mint-philosophy/mintresearch.org).
 
-## Editing Content
+## How mintresearch.org is actually deployed (verified 2026-07-13)
 
-Most content is managed through the **Ghost admin panel** at `https://mintresearch.org/ghost/`.
-
-- **Publications, Events, News** — create/edit Posts, tag them `publication`, `event`, or `news`
-- **Newsletter issues** — created automatically by the yesterday-in-ai daemon (tagged `yesterday-in-ai`)
-- **About page** — edit the page tagged `#about` in Ghost admin
-- **Research projects** — edit pages tagged `#research-project`
-
-### People
-
-The lab roster lives in `assets/data/people.json` in this repo. To update:
-
-1. Edit `assets/data/people.json` — add/remove/update entries in `team`, `affiliates`, or `alumni`
-2. Commit and push
-3. Re-upload the theme (see below)
-
-Each person entry:
-```json
-{
-  "name": "Full Name",
-  "role": "Role Title",
-  "discipline": "Field",
-  "bio": "Optional bio text",
-  "photo": "assets/images/firstname-lastname.jpg",
-  "links": [
-    { "abbr": "Web", "url": "https://..." },
-    { "abbr": "GS", "url": "https://scholar.google.com/..." }
-  ]
-}
-```
-
-Link abbreviations: `Web` (personal site), `LI` (LinkedIn), `PP` (PhilPeople), `GS` (Google Scholar).
-
-### Images
-
-Team photos go in `assets/images/`. Use lowercase, hyphenated filenames: `firstname-lastname.jpg`.
-
-## Editing the Theme
-
-The theme uses [Ghost Handlebars](https://ghost.org/docs/themes/) templates.
-
-| File | What it controls |
-|---|---|
-| `home.hbs` | Homepage (hero, about, research, feed, people sections) |
-| `index.hbs` | Newsletter archive at `/newsletter/` |
-| `post.hbs` | Individual post/newsletter issue |
-| `page.hbs` | Generic pages |
-| `assets/css/screen.css` | All styles |
-| `assets/js/main.js` | Navigation, people rendering, feed filters |
-| `partials/` | Reusable components (nav, footer, subscribe form, etc.) |
-
-### CSS Variables
-
-```css
---navy: #0a1628;       /* dark backgrounds, headings */
---mint: #2ec4b6;       /* primary accent */
---mint-light: #5de8da; /* hover states */
---charcoal: #2d3436;   /* body text */
---gray: #636e72;       /* secondary text */
-```
-
-## House Tracker (private page)
-
-`/coquelin/` is a private house-furnishing tracker (template `house-tracker.hbs`,
-app `assets/js/house-tracker.js`, styles `assets/css/house-tracker.css`). It is
-`noindex`, unlinked, and shows only an unlock screen until a GitHub token with
-access to this repo is pasted in (stored in that browser's localStorage).
-
-State lives in `assets/data/house-tracker.json`. The page reads/writes it via
-the GitHub Contents API, so edits sync across devices — and agents can edit the
-JSON directly in the repo (keep the schema: each item has `id`, `room`, `name`,
-`source`, `status` one of `todo|ordered|delivered|done`, `suggested`, `notes`,
-`dates`, `priority` one of `urgent|normal|later`, and `container` — true for
-things already owned and arriving in the shipping container, which display the
-stages Coming → Arrived → In place instead of the buy pipeline). The page looks for the data file on the saved branch, then the repo
-default branch. Note the repo is public, so don't put anything sensitive
-(addresses, prices are fine at your discretion) in the JSON.
-
-Deploying the tracker requires **both** a theme re-upload (see below) **and**
-re-uploading `routes.yaml` (Ghost admin → Settings → Labs → Routes) because of
-the new `/coquelin/` route.
-
-## The DC Summer Camp Guide (public page)
-
-`/camps/` is a sign-in-gated (currently single-user) hub for DC-area summer camps — passphrase hash lives in `AUTH_HASH` at the top of the JS (template `camps.hbs`, app
-`assets/js/camps-hub.js`, styles `assets/css/camps-hub.css`). Data lives in
-`assets/data/camps.json`; the page fetches it from GitHub raw (main branch
-first) so **data commits go live without a theme re-upload**. A weekly routine
-re-verifies availability and 2027 registration windows and pushes updates.
-
-Each provider entry: `id`, `name`, `org`, `org_type`, `description`,
-`categories[]`, `tags[]` (controlled vocabularies — see the top of
-`camps-hub.js`), `ages`, `areas[]`, `locations`, `price_band`
-(`free|$|$$|$$$|$$$$|varies`), `price_detail`, `financial_aid`, `hours`,
-`extended_care`, `url`, `url_register`, `url_more`, `phone`, `email`,
-`reg_2027{opens,mechanism,notes}`, `status_2026`, `sessions_2026`,
-`fit_notes`, `confidence`.
-
-The page includes an AI concierge that calls the Anthropic API directly from
-the browser with the visitor's own key (stored in their localStorage only),
-giving Claude search tools over the dataset.
-
-Deploying page changes needs a theme re-upload + `routes.yaml` re-upload
-(route `/camps/`). Data-only changes need just a push to main.
-
-## Deploying Changes
-
-After editing theme files:
-
-```bash
-# 1. Commit your changes
-git add -A && git commit -m "description of change"
-git push
-
-# 2. Zip the theme (exclude .git)
-cd /path/to/mint-ghost-theme
-zip -r mint-ghost-theme.zip . -x '.git/*'
-
-# 3. Upload via Ghost admin
-#    Settings → Design → Change theme → Upload theme → select the zip
-```
-
-Or ask Minty to deploy — the migration script can upload the theme automatically.
-
-## Local Preview
-
-Ghost runs locally on the Mac Studio at `http://127.0.0.1:2368`. To test theme changes without deploying:
-
-1. Edit files in this directory (it's the live theme directory)
-2. Restart Ghost: `launchctl unload ~/Library/LaunchAgents/com.mintlab.ghost.plist && launchctl load ~/Library/LaunchAgents/com.mintlab.ghost.plist`
-3. Visit `http://127.0.0.1:2368` (add header `X-Forwarded-Proto: https` or use a browser extension)
-
-## Architecture
-
-- **Ghost v6.19.3** on Node 22 LTS, MySQL 9.6
-- **Cloudflare Tunnel** routes `mintresearch.org` → `localhost:2368`
-- **Launchd daemons**: `com.mintlab.ghost` (Ghost CMS), `com.mintlab.cloudflared` (tunnel)
-- **Newsletter delivery**: Ghost handles subscriber management and email via Mailgun (pending setup)
-
-## Routes
-
-| URL | What | Source |
+| Host | What serves it | Evidence |
 |---|---|---|
-| `/` | Homepage (single-page scroll) | `home.hbs` |
-| `/newsletter/` | Newsletter archive | `index.hbs`, posts tagged `yesterday-in-ai` |
-| `/newsletter/{slug}/` | Individual newsletter issue | `post.hbs` |
-| `/feed/` | Publications, events, news | `index.hbs`, posts not tagged newsletter |
-| `/feed/{slug}/` | Individual feed item | `post.hbs` |
-| `/ghost/` | Admin panel | Ghost built-in |
+| `mintresearch.org` (+ `www`) | GitHub Pages, Astro static site from the `mintresearch.org` repo | `server: GitHub.com` headers, `/_astro/*.css` assets, apex A records 185.199.108–111.153; `/ghost/` returns 404 |
+| `curator.mintresearch.org` | Separate app behind **Cloudflare Access** (email login) | 302 to `mintresearch.cloudflareaccess.com/cdn-cgi/access/login/...` |
+| `camps.mintresearch.org` | **This repo** — GitHub Pages from the `gh-pages` branch | Custom domain registered via CNAME file; DNS record pending (see below) |
+
+The Ghost-on-Mac-Studio + Cloudflare-tunnel setup described in this README's
+earlier versions is no longer what production runs. The Ghost theme files
+(`*.hbs`, `partials/`, `routes.yaml`, `assets/css/screen.css`,
+`assets/js/main.js`, `assets/data/people.json`) are kept for reference but are
+**not deployed anywhere**.
+
+---
+
+## Summer Camps for Kids Who Aren't Sporty
+
+A private, sign-in-gated guide to 294 DC-area summer camps for kids who'd
+rather build, draw, act, write, code, dig, sail or wander.
+
+- **Live at:** https://camps.mintresearch.org (passphrase sign-in)
+- **App:** `.github/pages/index.html` + `assets/js/camps-hub.js` + `assets/css/camps-hub.css`
+- **Data:** `assets/data/camps.json` — 294 providers, every entry fact-checked
+  (July 2026) with a per-entry `verification_note`; 22 sports-only camps are
+  hidden by default behind a toggle
+- **Views:** filterable directory · 2027 registration-opens calendar ·
+  kid-profile matcher · AI concierge (Claude with search tools over the
+  dataset, runs in the browser on the visitor's own Anthropic API key)
+
+### Deployment pipeline (all automatic)
+
+1. Push to `main` touching `camps.json`, the app JS/CSS, or `.github/pages/**`
+2. `.github/workflows/deploy-camps-pages.yml` assembles the static site and
+   force-pushes the `gh-pages` branch (CNAME `camps.mintresearch.org` baked in)
+3. GitHub Pages publishes it (the "pages build and deployment" run)
+4. `.github/workflows/verify-camps-pages.yml` (manual or on edit) runs a real
+   Chromium against the live site: login wall, card counts, search, no JS errors
+5. `.github/workflows/site-recon.yml` (manual or on edit) surveys what all the
+   `mintresearch.org` hosts actually serve
+
+A **weekly Routine** (Mondays 13:00 UTC, runs as a fresh Claude session)
+re-verifies availability, watches for 2027 registration-date announcements,
+closes entries from the dataset's `known_gaps` list, and pushes data-only
+commits to `main` — which triggers step 1, so the live site stays current
+with no manual steps.
+
+### DNS (the one manual step, still pending)
+
+In Cloudflare DNS for `mintresearch.org`, add:
+
+```
+CNAME  camps  →  mint-philosophy.github.io   (DNS only / grey cloud)
+```
+
+GitHub auto-issues the HTTPS certificate a few minutes after the record
+propagates. Optionally add a Cloudflare Access application over
+`camps.mintresearch.org` for curator-style email login on top of the in-page
+passphrase gate.
+
+### Access & data model
+
+- Sign-in: passphrase checked against the SHA-256 constant `AUTH_HASH` at the
+  top of `camps-hub.js`; remembered per device; sign-out in the footer. To
+  rotate: `printf '%s' 'new-pass' | openssl dgst -sha256` and replace the hash.
+- The page and app are gated but `camps.json` itself is public in this repo.
+- Provider schema: `id`, `name`, `org`, `org_type`, `description`,
+  `categories[]`, `tags[]` (controlled vocabularies at the top of
+  `camps-hub.js`), `ages`, `areas[]`, `locations`, `price_band`
+  (`free|$|$$|$$$|$$$$|varies`), `price_detail`, `financial_aid`, `hours`,
+  `extended_care`, `url`, `url_register`, `url_more`, `phone`, `email`,
+  `reg_2027{opens,mechanism,notes}`, `status_2026`, `sessions_2026`,
+  `fit_notes`, `confidence`, `verification_note`.
+- "Sports-only" (hidden by default) = `categories` contains `sports` and
+  nothing beyond `sports`/`general-day-camp`.
+
+---
+
+## House tracker (`/coquelin/` — not currently deployed)
+
+A private furnishing/move-in tracker: `house-tracker.hbs` +
+`assets/js/house-tracker.js` + `assets/css/house-tracker.css`, state in
+`assets/data/house-tracker.json` read/written through the GitHub Contents API
+with a fine-grained PAT (so edits sync across devices and agents can edit the
+JSON directly). Item schema: `id`, `room`, `name`, `source`, `status`
+(`todo|ordered|delivered|done`), `suggested`, `notes`, `dates`, `priority`
+(`urgent|normal|later`), `container` (owned goods arriving by sea — shown as
+Coming → Arrived → In place).
+
+It was built as a Ghost route and therefore has no live URL now that Ghost is
+retired. To deploy it, give it the same treatment as the camps hub (its own
+Pages workflow + subdomain) — the app is already self-contained.
+
+---
+
+## Legacy: Ghost theme (retired)
+
+`home.hbs`, `index.hbs`, `post.hbs`, `page.hbs`, `author.hbs`, `tag.hbs`,
+`partials/`, `routes.yaml`, `assets/css/screen.css`, `assets/js/main.js` and
+`assets/data/people.json` are the old Ghost 6.x theme for the previous
+mintresearch.org. Nothing deploys them. If Ghost is ever revived, see the git
+history of this README for the theme-upload and local-preview instructions.
