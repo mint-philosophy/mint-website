@@ -1,106 +1,55 @@
 # mint-website
 
-> **What this repo actually is (July 2026):** the home of **Summer Camps for
-> Kids Who Aren't Sporty** (camps.mintresearch.org) and the family **house
-> tracker** web app, plus the *retired* Ghost theme that used to power
-> mintresearch.org. The live MINT Lab site is **not** served from this repo —
-> it's an Astro static site on GitHub Pages from
-> [`mint-philosophy/mintresearch.org`](https://github.com/mint-philosophy/mintresearch.org).
+> **What this repo actually is (July 2026):** the *retired* Ghost theme that
+> used to power mintresearch.org, plus the **state file for the house
+> tracker** web app. The live MINT Lab site — including the camp guide and the
+> house tracker pages — is served from
+> [`mint-philosophy/mintresearch.org`](https://github.com/mint-philosophy/mintresearch.org)
+> (hand-edited static HTML in `public/`, auto-deployed to GitHub Pages on
+> every push to `main`).
 
-## How mintresearch.org is actually deployed (verified 2026-07-13)
+## Where things moved
 
-| Host | What serves it | Evidence |
+| Thing | Lives at | Source |
 |---|---|---|
-| `mintresearch.org` (+ `www`) | GitHub Pages, Astro static site from the `mintresearch.org` repo | `server: GitHub.com` headers, `/_astro/*.css` assets, apex A records 185.199.108–111.153; `/ghost/` returns 404 |
-| `curator.mintresearch.org` | Separate app behind **Cloudflare Access** (email login) | 302 to `mintresearch.cloudflareaccess.com/cdn-cgi/access/login/...` |
-| `camps.mintresearch.org` | **This repo** — GitHub Pages from the `gh-pages` branch | Custom domain registered via CNAME file; DNS record pending (see below) |
+| Summer Camps for Kids Who Aren't Sporty | https://mintresearch.org/camps/ (passphrase sign-in) | `mintresearch.org` repo, `public/camps/` (`index.html`, `camps-hub.js`, `camps-hub.css`, `camps.json`) |
+| House tracker | https://mintresearch.org/coquelin/ (GitHub-token unlock) | `mintresearch.org` repo, `public/coquelin/` — **but its state stays in this repo**, see below |
 
-The Ghost-on-Mac-Studio + Cloudflare-tunnel setup described in this README's
-earlier versions is no longer what production runs. The Ghost theme files
-(`*.hbs`, `partials/`, `routes.yaml`, `assets/css/screen.css`,
-`assets/js/main.js`, `assets/data/people.json`) are kept for reference but are
-**not deployed anywhere**.
+Both pages follow the site's standard pattern: a folder under `public/` in the
+`mintresearch.org` repo, deployed automatically by that repo's GitHub Actions
+workflow on every push to `main`. No subdomains, no separate Pages sites, no
+DNS records. (An earlier experiment deploying the camp guide from this repo's
+`gh-pages` branch to `camps.mintresearch.org` was dismantled in July 2026 —
+never add a DNS record for that host.)
 
----
+## House tracker state (the one live thing in this repo)
 
-## Summer Camps for Kids Who Aren't Sporty
+`assets/data/house-tracker.json` is the tracker's database. The page at
+mintresearch.org/coquelin/ reads and writes it through the GitHub Contents API
+with a fine-grained PAT scoped to this repo (pasted once per device, kept in
+localStorage). Keeping the state here — rather than in the `mintresearch.org`
+repo — means tracker saves don't trigger site deploys.
 
-A private, sign-in-gated guide to 294 DC-area summer camps for kids who'd
-rather build, draw, act, write, code, dig, sail or wander.
+Agents may edit the JSON directly. Item schema: `id`, `room`, `name`,
+`source`, `status` (`todo|ordered|delivered|done`), `suggested`, `notes`,
+`dates`, `priority` (`urgent|normal|later`), `container` (owned goods arriving
+by sea — shown as Coming → Arrived → In place instead of the buy pipeline).
+This repo is public, so nothing sensitive in the JSON (no addresses).
 
-- **Live at:** https://camps.mintresearch.org (passphrase sign-in)
-- **App:** `.github/pages/index.html` + `assets/js/camps-hub.js` + `assets/css/camps-hub.css`
-- **Data:** `assets/data/camps.json` — 294 providers, every entry fact-checked
-  (July 2026) with a per-entry `verification_note`; 22 sports-only camps are
-  hidden by default behind a toggle
-- **Views:** filterable directory · 2027 registration-opens calendar ·
-  kid-profile matcher · AI concierge (Claude with search tools over the
-  dataset, runs in the browser on the visitor's own Anthropic API key)
+## Camp guide data
 
-### Deployment pipeline (all automatic)
+`public/camps/camps.json` in the `mintresearch.org` repo — 294 providers,
+fact-checked July 2026, per-entry `verification_note`, controlled category/tag
+vocabularies documented at the top of `camps-hub.js`. A weekly Routine
+(Mondays 13:00 UTC, fresh Claude session) re-verifies availability, watches
+for 2027 registration announcements, closes `known_gaps` entries, and pushes
+data-only commits — each push auto-deploys the site, so the guide stays
+current with no manual steps.
 
-1. Push to `main` touching `camps.json`, the app JS/CSS, or `.github/pages/**`
-2. `.github/workflows/deploy-camps-pages.yml` assembles the static site and
-   force-pushes the `gh-pages` branch (CNAME `camps.mintresearch.org` baked in)
-3. GitHub Pages publishes it (the "pages build and deployment" run)
-4. `.github/workflows/verify-camps-pages.yml` (manual or on edit) runs a real
-   Chromium against the live site: login wall, card counts, search, no JS errors
-5. `.github/workflows/site-recon.yml` (manual or on edit) surveys what all the
-   `mintresearch.org` hosts actually serve
-
-A **weekly Routine** (Mondays 13:00 UTC, runs as a fresh Claude session)
-re-verifies availability, watches for 2027 registration-date announcements,
-closes entries from the dataset's `known_gaps` list, and pushes data-only
-commits to `main` — which triggers step 1, so the live site stays current
-with no manual steps.
-
-### DNS (the one manual step, still pending)
-
-In Cloudflare DNS for `mintresearch.org`, add:
-
-```
-CNAME  camps  →  mint-philosophy.github.io   (DNS only / grey cloud)
-```
-
-GitHub auto-issues the HTTPS certificate a few minutes after the record
-propagates. Optionally add a Cloudflare Access application over
-`camps.mintresearch.org` for curator-style email login on top of the in-page
-passphrase gate.
-
-### Access & data model
-
-- Sign-in: passphrase checked against the SHA-256 constant `AUTH_HASH` at the
-  top of `camps-hub.js`; remembered per device; sign-out in the footer. To
-  rotate: `printf '%s' 'new-pass' | openssl dgst -sha256` and replace the hash.
-- The page and app are gated but `camps.json` itself is public in this repo.
-- Provider schema: `id`, `name`, `org`, `org_type`, `description`,
-  `categories[]`, `tags[]` (controlled vocabularies at the top of
-  `camps-hub.js`), `ages`, `areas[]`, `locations`, `price_band`
-  (`free|$|$$|$$$|$$$$|varies`), `price_detail`, `financial_aid`, `hours`,
-  `extended_care`, `url`, `url_register`, `url_more`, `phone`, `email`,
-  `reg_2027{opens,mechanism,notes}`, `status_2026`, `sessions_2026`,
-  `fit_notes`, `confidence`, `verification_note`.
-- "Sports-only" (hidden by default) = `categories` contains `sports` and
-  nothing beyond `sports`/`general-day-camp`.
-
----
-
-## House tracker (`/coquelin/` — not currently deployed)
-
-A private furnishing/move-in tracker: `house-tracker.hbs` +
-`assets/js/house-tracker.js` + `assets/css/house-tracker.css`, state in
-`assets/data/house-tracker.json` read/written through the GitHub Contents API
-with a fine-grained PAT (so edits sync across devices and agents can edit the
-JSON directly). Item schema: `id`, `room`, `name`, `source`, `status`
-(`todo|ordered|delivered|done`), `suggested`, `notes`, `dates`, `priority`
-(`urgent|normal|later`), `container` (owned goods arriving by sea — shown as
-Coming → Arrived → In place).
-
-It was built as a Ghost route and therefore has no live URL now that Ghost is
-retired. To deploy it, give it the same treatment as the camps hub (its own
-Pages workflow + subdomain) — the app is already self-contained.
-
----
+Sign-in: passphrase checked against the SHA-256 constant `AUTH_HASH` at the
+top of `camps-hub.js`; to rotate, `printf '%s' 'new-pass' | openssl dgst
+-sha256` and replace the hash. The page is gated but `camps.json` itself is
+public.
 
 ## Legacy: Ghost theme (retired)
 
