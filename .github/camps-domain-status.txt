@@ -1,2 +1,10 @@
-probe at 2026-07-13T15:54:56Z
-{"cname": null, "https_certificate": null, "https_enforced": true}
+probe at 2026-07-13T19:02:29Z
+{"cname": "camps.mintresearch.org", "https_certificate": {"state": "approved", "description": "The certificate has been approved.", "domains": ["camps.mintresearch.org"], "expires_at": "2026-10-11"}, "https_enforced": false}
+https attempt 1: 200
+camps.json: 200 858821B
+<title>Summer Camps for Kids Who Aren't Sporty</title>
+login wall inputs: 1
+h1: Summer Camps for Kids Who Aren’t Sporty
+default cards: 272
+cards with sports: 294
+JS errors: none
