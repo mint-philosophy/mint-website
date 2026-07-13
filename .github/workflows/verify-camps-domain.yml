@@ -1,0 +1,53 @@
+# Temporary: verify https://camps.mintresearch.org after the DNS record
+# was added. Retries while GitHub issues the HTTPS certificate. Delete after use.
+name: Verify camps subdomain
+on:
+  push:
+    paths:
+      - '.github/workflows/verify-camps-domain.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Wait for HTTPS to come up
+        run: |
+          for i in $(seq 1 40); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://camps.mintresearch.org/ || echo fail)
+            echo "attempt $i: $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 30
+          done
+          echo "HTTPS never came up"; exit 1
+      - name: HTTP checks
+        run: |
+          curl -sS -o /dev/null -w 'index: %{http_code} %{size_download}B\n' https://camps.mintresearch.org/
+          curl -sS -o /dev/null -w 'camps.json: %{http_code} %{size_download}B\n' https://camps.mintresearch.org/camps.json
+          curl -sS https://camps.mintresearch.org/ | grep -o '<title>[^<]*</title>'
+      - name: Browser e2e
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm i --no-audit --no-fund playwright >/dev/null 2>&1
+          npx playwright install --with-deps chromium >/dev/null 2>&1
+          cat > e2e.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          const errors = [];
+          const browser = await chromium.launch();
+          const page = await (await browser.newContext()).newPage();
+          page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+          page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
+          await page.goto('https://camps.mintresearch.org/', { waitUntil: 'networkidle' });
+          console.log('login wall inputs:', await page.locator('input').count());
+          await page.evaluate(() => localStorage.setItem('camps_auth_v1', '298ad48fce2fbb1ed100ce1abc418906dc2017d137670b9fcbed9315a0f14b21'));
+          await page.reload({ waitUntil: 'networkidle' });
+          await page.waitForTimeout(1500);
+          console.log('h1:', (await page.locator('h1').first().textContent() || '').trim());
+          console.log('default cards:', await page.locator('.card').count());
+          const chip = page.locator('[data-act="sports"]');
+          if (await chip.count()) { await chip.first().click(); await page.waitForTimeout(500); console.log('cards with sports:', await page.locator('.card').count()); }
+          console.log('JS errors:', errors.length ? errors : 'none');
+          await browser.close();
+          process.exit(errors.length ? 1 : 0);
+          EOF
+          node e2e.mjs
