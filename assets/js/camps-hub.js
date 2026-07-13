@@ -46,11 +46,19 @@
     area: 'all',
     age: '',
     need: {},           // financial-aid, aftercare, beginner-friendly, teen-program, special-needs-inclusive, overnight
+    showSports: false,  // site theme: camps for kids who aren't sporty — sports-first camps opt-in
     view: 'directory',  // directory | calendar | match | concierge
     expanded: {},
     chat: [],
     chatBusy: false
   };
+
+  // "Sports-first" = nothing to offer a non-sporty kid: only sports (plus at
+  // most generic day-camp filler). Sports+arts, sports+adventure etc. stay.
+  function sportsFirst(p) {
+    var c = p.categories || [];
+    return c.indexOf('sports') > -1 && c.every(function (x) { return x === 'sports' || x === 'general-day-camp'; });
+  }
 
   var app = document.getElementById('app');
 
@@ -126,11 +134,13 @@
     var cats = activeCats();
     var needs = Object.keys(state.need).filter(function (k) { return state.need[k]; });
     var age = state.age === '' ? null : parseFloat(state.age);
+    var sportsOverride = state.showSports || state.cats['sports'];
     return state.data.providers
       .map(function (p) { return { p: p, s: searchScore(p, state.q) }; })
       .filter(function (x) {
         var p = x.p;
         if (x.s === 0) return false;
+        if (!sportsOverride && sportsFirst(p)) return false;
         if (cats.length && !cats.some(function (c) { return (p.categories || []).indexOf(c) > -1; })) return false;
         if (state.org !== 'all' && p.org_type !== state.org) return false;
         if (state.price !== 'all' && p.price_band !== state.price) return false;
@@ -227,6 +237,9 @@
         [['financial-aid', 'Financial aid'], ['aftercare', 'Aftercare'], ['beginner-friendly', 'Beginner-friendly'], ['teen-program', 'Teens 13+'], ['special-needs-inclusive', 'Special-needs inclusive'], ['overnight', 'Overnight'], ['late-availability-2026', 'Openings now (2026)']].map(function (n) {
           return '<button class="fchip need' + (state.need[n[0]] ? ' on' : '') + '" data-act="need" data-need="' + n[0] + '">' + n[1] + '</button>';
         }).join('') +
+        '<button class="fchip sporty' + (state.showSports ? ' on' : '') + '" data-act="sports" title="This guide hides camps that are only about sports; toggle to see them">' +
+          (state.showSports ? 'Hide' : 'Show') + ' sports-only camps (' + state.data.providers.filter(sportsFirst).length + ')' +
+        '</button>' +
         '<span class="count">' + list.length + ' of ' + state.data.providers.length + '</span>' +
       '</div>' +
     '</div>';
@@ -420,9 +433,11 @@
   }
 
   function systemPrompt() {
-    return 'You are the concierge for The DC Summer Camp Guide (mintresearch.org/camps/), an independently maintained public dataset of ' +
+    return 'You are the concierge for "Summer Camps for Kids Who Aren’t Sporty" (camps.mintresearch.org), an independently maintained dataset of ' +
       state.data.providers.length + ' Washington-DC-area summer camps and programs, last updated ' + (state.data.updated || 'recently') + '. ' +
-      'You help parents — often newcomers with zero local knowledge — find genuinely good fits for their specific kid.\n\n' +
+      'You help parents — often newcomers with zero local knowledge — find genuinely good fits for their specific kid. ' +
+      'The site’s premise: the kid is not sporty. Default away from sports-first camps entirely; competitive athletics only if the parent explicitly asks. ' +
+      'Gentle, non-competitive, beginner-level physical things (nature hikes, sailing, climbing, circus, riding, learn-to-swim) are fine when they fit the kid — frame them as adventures, not sports.\n\n' +
       'Method: use search_camps and get_camp liberally (several searches from different angles beats one). Reason about the whole kid — temperament, siblings, logistics, budget — not just interest keywords. ' +
       'Distinguish clearly between what is still bookable for 2026 (status_2026) and what to plan for 2027 (reg_2027: when registration opens and how it works — lotteries and nature camps sell out in days). ' +
       'Recommend 3-6 options with honest trade-offs, name the registration mechanics for each, and flag anything a parent must verify directly (the dataset is researched, not official). ' +
@@ -501,8 +516,8 @@
     app.innerHTML =
       '<div class="login-wall"><div class="login-card">' +
         '<div class="eyebrow">Private preview</div>' +
-        '<h1>The DC Summer Camp Guide</h1>' +
-        '<p>This guide is not public yet. Sign in to continue.</p>' +
+        '<h1>Summer Camps for Kids Who Aren’t Sporty</h1>' +
+        '<p>The DC-area guide. Not public yet — sign in to continue.</p>' +
         (err ? '<p class="login-err">' + esc(err) + '</p>' : '') +
         '<form id="login-form">' +
           '<input id="login-pass" type="password" placeholder="Passphrase" autocomplete="current-password" autofocus>' +
@@ -526,9 +541,9 @@
     var views = [['directory', 'Directory'], ['calendar', '2027 calendar'], ['match', 'Find a fit'], ['concierge', 'Ask the concierge']];
     app.innerHTML =
       '<header class="mast"><div class="shell">' +
-        '<div class="eyebrow">Private preview · updated ' + esc(d.updated || '') + '</div>' +
-        '<h1>The DC Summer Camp Guide</h1>' +
-        '<p class="dek">Every summer camp and camp-style program we can find in DC and close-in Maryland — government, nonprofit, private, museum, YMCA and school-run — tagged, searchable, and honest about how registration really works. Built because no central hub existed.</p>' +
+        '<div class="eyebrow">Private preview · DC + close-in Maryland · updated ' + esc(d.updated || '') + '</div>' +
+        '<h1>Summer Camps for Kids Who Aren’t Sporty</h1>' +
+        '<p class="dek">For kids who’d rather build, draw, act, write, code, dig, sail or wander: every camp we can find — government, nonprofit, private, museum, YMCA and school-run — tagged, searchable, and honest about how registration really works. Sports-only camps are here too, just switched off by default.</p>' +
         '<div class="statrow"><div class="stat"><b>' + d.providers.length + '</b><span>programs</span></div>' +
         '<div class="stat"><b>' + d.providers.filter(function (p) { return p.price_band === 'free' || (p.tags || []).indexOf('financial-aid') > -1; }).length + '</b><span>free or aided</span></div>' +
         '<div class="stat"><b>' + d.providers.filter(function (p) { return (p.tags || []).indexOf('teen-program') > -1; }).length + '</b><span>serve teens</span></div></div>' +
@@ -564,6 +579,7 @@
         if (act === 'view') { state.view = el.getAttribute('data-view'); render(); }
         if (act === 'cat') { var c2 = el.getAttribute('data-cat'); state.cats[c2] = !state.cats[c2]; render(); }
         if (act === 'need') { var n = el.getAttribute('data-need'); state.need[n] = !state.need[n]; render(); }
+        if (act === 'sports') { state.showSports = !state.showSports; render(); }
         if (act === 'expand') { var id2 = el.getAttribute('data-id'); state.expanded[id2] = !state.expanded[id2]; render(); }
         if (act === 'save-key') {
           var v = document.getElementById('api-key').value.trim();

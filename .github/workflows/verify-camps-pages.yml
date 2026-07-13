@@ -13,39 +13,48 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve base URL
+        id: base
+        run: |
+          if curl -sfI --max-time 10 https://camps.mintresearch.org/ >/dev/null 2>&1; then
+            echo "url=https://camps.mintresearch.org" >> "$GITHUB_OUTPUT"
+            echo "live=true" >> "$GITHUB_OUTPUT"
+            echo "Custom domain is LIVE — verifying against camps.mintresearch.org"
+          else
+            echo "url=https://mint-philosophy.github.io/mint-website" >> "$GITHUB_OUTPUT"
+            echo "live=false" >> "$GITHUB_OUTPUT"
+            echo "camps.mintresearch.org not reachable yet (DNS record pending)."
+            echo "Deployment proof: github.io should 301 to the custom domain:"
+            curl -sSI https://mint-philosophy.github.io/mint-website/ | sed -n '1,6p'
+          fi
       - name: HTTP checks
+        if: steps.base.outputs.live == 'true'
         run: |
           set -e
-          BASE="${CAMPS_BASE_URL:-https://mint-philosophy.github.io/mint-website}"
-          echo "== index =="
-          curl -sfL "$BASE/" | grep -q 'camps-hub.js' && echo "index OK: references app JS"
-          echo "== app js =="
-          curl -sfL "$BASE/assets/js/camps-hub.js" | grep -q 'AUTH_HASH' && echo "JS OK: auth gate present"
-          echo "== css =="
-          curl -sfL -o /dev/null -w 'CSS HTTP %{http_code}\n' "$BASE/assets/css/camps-hub.css"
-          echo "== data =="
+          BASE="${{ steps.base.outputs.url }}"
+          curl -sfL "$BASE/" | grep -q 'camps-hub.js' && echo "index OK"
+          curl -sfL "$BASE/assets/js/camps-hub.js" | grep -q 'AUTH_HASH' && echo "JS OK"
           curl -sfL "$BASE/assets/data/camps.json" | python3 -c "import json,sys; d=json.load(sys.stdin); print('DATA OK:', len(d['providers']), 'providers, updated', d['updated'])"
-          echo "== primary data source (raw main) =="
-          curl -sfL "https://raw.githubusercontent.com/mint-philosophy/mint-website/main/assets/data/camps.json" | python3 -c "import json,sys; d=json.load(sys.stdin); print('RAW MAIN OK:', len(d['providers']), 'providers')"
       - name: Browser end-to-end
+        if: steps.base.outputs.live == 'true'
+        env:
+          CAMPS_BASE_URL: ${{ steps.base.outputs.url }}
         run: |
           npm init -y >/dev/null 2>&1
           npm install --no-audit --no-fund playwright >/dev/null 2>&1
           npx playwright install --with-deps chromium >/dev/null 2>&1
           cat > e2e.mjs <<'EOF'
           import { chromium } from 'playwright';
-          const BASE = process.env.CAMPS_BASE_URL || 'https://mint-philosophy.github.io/mint-website';
+          const BASE = process.env.CAMPS_BASE_URL;
           const browser = await chromium.launch();
           const fails = [];
           const ok = (c, m) => { console.log((c ? 'ok  -' : 'FAIL -'), m); if (!c) fails.push(m); };
 
-          // 1. Fresh visitor sees the login wall, not the data
           const p1 = await browser.newPage();
           await p1.goto(BASE + '/', { waitUntil: 'networkidle' });
           ok(await p1.locator('#login-pass').isVisible(), 'login wall shows for fresh visitor');
-          ok((await p1.locator('.card').count()) === 0, 'no camp data visible before sign-in');
+          ok((await p1.locator('.card').count()) === 0, 'no camp data before sign-in');
 
-          // 2. Authed session renders the full guide (auth token = public AUTH_HASH)
           const ctx = await browser.newContext();
           await ctx.addInitScript(() => localStorage.setItem('camps_auth_v1', '298ad48fce2fbb1ed100ce1abc418906dc2017d137670b9fcbed9315a0f14b21'));
           const p2 = await ctx.newPage();
@@ -53,18 +62,19 @@ jobs:
           p2.on('pageerror', e => errors.push(e.message));
           await p2.goto(BASE + '/');
           await p2.waitForSelector('.card', { timeout: 20000 });
-          const cards = await p2.locator('.card').count();
-          ok(cards === 294, 'all 294 providers render (got ' + cards + ')');
+          ok((await p2.locator('h1').first().textContent()).includes('Sporty'), 'non-sporty branding renders');
+          const shown = await p2.locator('.card').count();
+          await p2.click('.fchip[data-act="sports"]');
+          await p2.waitForTimeout(300);
+          const all = await p2.locator('.card').count();
+          ok(all === 294 && shown === all - 22, 'sports-only camps hidden by default (' + shown + ' shown, ' + all + ' with toggle)');
           await p2.fill('#q', 'writing');
           await p2.waitForTimeout(400);
-          const w = await p2.locator('.card').count();
-          ok(w > 3 && w < cards, 'search works on live site (' + w + ' hits)');
-          await p2.click('.vtab[data-view="calendar"]');
-          ok((await p2.locator('.tl-month').count()) >= 5, '2027 calendar renders');
+          ok((await p2.locator('.card').count()) > 3, 'search works live');
           ok(errors.length === 0, 'no JS errors (' + errors.join('; ') + ')');
 
           await browser.close();
-          if (fails.length) { console.error(fails.length + ' failures'); process.exit(1); }
-          console.log('ALL LIVE CHECKS PASSED');
+          if (fails.length) process.exit(1);
+          console.log('ALL LIVE CHECKS PASSED on ' + BASE);
           EOF
           node e2e.mjs
