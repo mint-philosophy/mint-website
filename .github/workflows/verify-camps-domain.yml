@@ -1,6 +1,6 @@
 # Temporary: verify https://camps.mintresearch.org after the DNS record
 # was added. Retries while GitHub issues the HTTPS certificate. Delete after use.
-# Re-run 2: first 20-min window expired before the cert was issued.
+# Re-run 3: after cycling the CNAME to reset stuck cert provisioning.
 name: Verify camps subdomain
 on:
   push:
