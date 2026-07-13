@@ -4,7 +4,8 @@
 # public/camps/ in mint-philosophy/mintresearch.org — this workflow just
 # mirrors that folder onto gh-pages with the subdomain CNAME baked in.
 # Runs daily (an hour after the Monday 13:00 UTC data-refresh Routine),
-# on manual dispatch, and when this file changes.
+# on manual dispatch, and when this file changes. (Editing this comment is
+# the workaround to trigger a sync when workflow_dispatch is unavailable.)
 name: Deploy camps.mintresearch.org
 on:
   push:
