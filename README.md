@@ -12,7 +12,7 @@
 
 | Thing | Lives at | Source |
 |---|---|---|
-| Summer Camps for Kids Who Aren't Sporty | **https://camps.mintresearch.org** (canonical, passphrase sign-in); also mirrored at https://mintresearch.org/camps/ | `mintresearch.org` repo, `public/camps/` (`index.html`, `camps-hub.js`, `camps-hub.css`, `camps.json`) |
+| Summer Camps for Kids Who Aren't Sporty | **https://camps.mintresearch.org** (canonical, passphrase sign-in); https://mintresearch.org/camps/ redirects there | `mintresearch.org` repo, `public/camps/` (`index.html`, `camps-hub.js`, `camps-hub.css`, `camps.json`) |
 | House tracker | https://mintresearch.org/coquelin/ (GitHub-token unlock) | `mintresearch.org` repo, `public/coquelin/` — **but its state stays in this repo**, see below |
 
 Both pages' source of truth is a folder under `public/` in the
